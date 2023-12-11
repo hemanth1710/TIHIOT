@@ -108,7 +108,11 @@ const BookmarkScreen = () => {
     try {
       const firestoreDocRef = doc(db, 'leaf', documentId);
       const firestoreDoc = await getDoc(firestoreDocRef);
-
+      if(firestoreDoc==null)
+      {
+        // <Text>NO BOOKMARKED IMAGES</Text>
+        console.log("NO BOOKMARKED IMAGES");
+      }
       if (firestoreDoc.exists()) {
         const currentBookmarkStatus = firestoreDoc.data()?.bookmark || false;
         const newBookmarkStatus = !currentBookmarkStatus;
