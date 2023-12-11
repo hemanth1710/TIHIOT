@@ -1,12 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { View, Image, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect, useCallback, useLayoutEffect  } from 'react';
+import { View, Image, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native';
 import { getStorage, ref, getDownloadURL, listAll } from 'firebase/storage';
 import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { useNavigation} from "@react-navigation/native";
-import { useLayoutEffect } from "react";
-import { firebaseApp } from '../config';
-import { Entypo, Ionicons } from '@expo/vector-icons';
+import { useNavigation } from "@react-navigation/native";
 import Modal from 'react-native-modal';
+import { Ionicons } from '@expo/vector-icons';
+import { firebaseApp } from '../config';
 
 const db = getFirestore(firebaseApp);
 const storage = getStorage(firebaseApp);
@@ -16,6 +15,7 @@ const HealthScreen = () => {
   const [photoData, setPhotoData] = useState([]);
   const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState(null);
+  const [refreshing, setRefreshing] = useState(false);
   useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
@@ -38,61 +38,59 @@ const HealthScreen = () => {
       ),
     });
   }, [navigation, filterModalVisible]);
-
   useEffect(() => {
-    const fetchData = async () => {
-      const storageRef = ref(storage, 'Folder');
-
-      try {
-        const listResult = await listAll(storageRef);
-
-        const data = await Promise.all(
-          listResult.items.map(async (item) => {
-            const url = await getDownloadURL(item);
-            const documentId = item.name.split('.')[0];
-
-            try {
-              const firestoreDocRef = doc(db, 'leaf', documentId);
-              const firestoreDoc = await getDoc(firestoreDocRef);
-
-              if (firestoreDoc.exists()) {
-                const firestoreData = firestoreDoc.data();
-                return {
-                  id: documentId,
-                  imageUrl: url,
-                  imageDetails: firestoreData ? firestoreData : null,
-                };
-              } else {
-                console.warn(`Firestore document not found for image ${documentId}`);
-                return null;
-              }
-            } catch (error) {
-              console.error('Error fetching Firestore document:', error);
-              return null;
-            }
-          })
-        );
-
-        const filteredData = data.filter((item) => item !== null);
-
-        const sortedData = filteredData.sort((a, b) => (b.imageDetails[selectedFilter] || 0) - (a.imageDetails[selectedFilter] || 0));
-
-        setPhotoData(sortedData);
-      } catch (error) {
-        console.error('Error fetching photo data from Storage:', error);
-      }
-    };
-
     fetchData();
   }, [selectedFilter]);
 
-  const applyFilter = (data, filter) => {
-    if (!filter) {
-      return data;
-    }
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchData();
+    setRefreshing(false);
+  }, [setRefreshing]);
 
-    return data.filter((item) => item.imageDetails && item.imageDetails[filter]);
+  const fetchData = async () => {
+    const storageRef = ref(storage, 'Folder');
+
+    try {
+      const listResult = await listAll(storageRef);
+
+      const data = await Promise.all(
+        listResult.items.map(async (item) => {
+          const url = await getDownloadURL(item);
+          const documentId = item.name.split('.')[0];
+
+          try {
+            const firestoreDocRef = doc(db, 'leaf', documentId);
+            const firestoreDoc = await getDoc(firestoreDocRef);
+
+            if (firestoreDoc.exists()) {
+              const firestoreData = firestoreDoc.data();
+              return {
+                id: documentId,
+                imageUrl: url,
+                imageDetails: firestoreData ? firestoreData : null,
+              };
+            } else {
+              console.warn(`Firestore document not found for image ${documentId}`);
+              return null;
+            }
+          } catch (error) {
+            console.error('Error fetching Firestore document:', error);
+            return null;
+          }
+        })
+      );
+
+      const filteredData = data.filter((item) => item !== null);
+
+        const sortedData = filteredData.sort((a, b) => (b.imageDetails[selectedFilter] || 0) - (a.imageDetails[selectedFilter] || 0));
+      setPhotoData(sortedData);
+    } catch (error) {
+      console.error('Error fetching photo data from Storage:', error);
+    }
   };
+
+
 
   const renderPhotoItem = ({ item }) => (
     <View style={styles.photoItem}>
@@ -152,9 +150,16 @@ const HealthScreen = () => {
         data={photoData}
         keyExtractor={(item) => item.id}
         renderItem={renderPhotoItem}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+          />
+        }
       />
 
       {/* Filter Modal */}
+      {/* ... your modal code */}
       <Modal
         isVisible={filterModalVisible}
         onBackdropPress={() => setFilterModalVisible(false)}
@@ -202,6 +207,7 @@ const HealthScreen = () => {
     </View>
   );
 };
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -231,7 +237,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     marginBottom: 3,
     lineHeight: 25,
-    fontWeight:'bold',
+    fontWeight: 'bold',
   },
   filterIcon: {
     marginRight: 20,
@@ -257,7 +263,7 @@ const styles = StyleSheet.create({
   selectedFilterText: {
     fontSize: 16,
     fontWeight: 'bold',
-    textAlign:'center',
+    textAlign: 'center',
   },
 });
 
