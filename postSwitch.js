@@ -1,5 +1,5 @@
-const sendValueToUbidots = async (value) => {
-    const variableId = "64e5986281ffd2000efb59ce"; 
+const sendValueToUbidotsSwitch = async (value) => {
+    const variableId = "657ef5b7a6d436000e8fb9a7"; 
     const API_KEY = "BBFF-qX45fLdKFmCKNOtX9xE3qja45uMi6r"; // Replace with your Ubidots API key
     const ubidotsEndpoint = `https://industrial.api.ubidots.com/api/v1.6/variables/${variableId}/values`;
 
@@ -22,6 +22,6 @@ const sendValueToUbidots = async (value) => {
         console.error("Error sending data to Ubidots:", error);
     }
     };
-    const valueToSend = 0; 
-    sendValueToUbidots( valueToSend);
-    export {sendValueToUbidots}
+    // const valueToSend = 0; 
+    // sendValueToUbidots( valueToSend);
+    export {sendValueToUbidotsSwitch}

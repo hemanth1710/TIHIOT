@@ -1,4 +1,6 @@
 import { getVariableDataFromUbidots } from "../get";
+import { getVariableDataFromUbidotsSwitch } from "../getSwitch";
+import { sendValueToUbidotsSwitch } from "../postSwitch";
 import { sendValueToUbidots } from "../post";
 import { doc, setDoc } from "firebase/firestore"; 
 import {
@@ -88,8 +90,8 @@ const HomeScreen = ( ) => {
   const [refreshing, setRefreshing] = React.useState(false);
   const [isValveOn, setIsValveOn] = React.useState(false);
   const [stageInstances, setStageInstances] = React.useState([]);
-
-  useLayoutEffect(() => {
+  const [isSwitchOn, setIsSwitchOn]=React.useState(false)
+    useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
       title: "Happy Plant",
@@ -146,6 +148,8 @@ const HomeScreen = ( ) => {
   const fetchCurrentValue = async () => {
     try {
       const currentValue = await getVariableDataFromUbidots();
+      const currentSwitchValue= await getVariableDataFromUbidotsSwitch();
+      setIsSwitchOn(currentSwitchValue === 1)
       setIsValveOn(currentValue === 1);
     } catch (error) {
       console.error("Error fetching current value:", error);
@@ -161,6 +165,20 @@ const HomeScreen = ( ) => {
   
         // Update the local state
         setIsValveOn(!isValveOn);
+      } catch (error) {
+        console.error("Error toggling switch:", error);
+      }
+    };
+    const handleToggleSwitchKill = async () => {
+      try {
+        // Toggle the value
+        const newValue = isSwitchOn ? 0 : 1;
+  
+        // Send the updated value to Ubidots
+        await sendValueToUbidotsSwitch(newValue);
+  
+        // Update the local state
+        setIsSwitchOn(!isSwitchOn);
       } catch (error) {
         console.error("Error toggling switch:", error);
       }
@@ -257,7 +275,7 @@ const HomeScreen = ( ) => {
     // Set up an interval to fetch data every X milliseconds (e.g., every 5 minutes)
     const refreshInterval = setInterval(() => {
       fetchData();
-    }, 2 * 60 * 1000000000); // Adjust the interval as needed previiousy 100 or 1000
+    }, 2 * 60 * 100); // Adjust the interval as needed previiousy 100 or 1000
 
 
     // Clear the interval when the component is unmounted
@@ -653,6 +671,16 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
             <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
               Bot is capturing image at the speed of 2 images/second
             </Text>
+            <View style={{ position: "absolute", top: 10, right: 10 }}>
+            <Switch
+              value={!isSwitchOn}
+              onValueChange={handleToggleSwitchKill}
+              ios_backgroundColor="#3e3e3e"
+              thumbColor={isSwitchOn ? "#f4f3f4" : "2f8000"}
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              
+            />
+          </View>
           </Pressable>
         </ScrollView>
       </ScrollView>
