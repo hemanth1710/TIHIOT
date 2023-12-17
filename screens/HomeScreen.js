@@ -1,3 +1,5 @@
+import { getVariableDataFromUbidots } from "../get";
+import { sendValueToUbidots } from "../post";
 import { doc, setDoc } from "firebase/firestore"; 
 import {
   Pressable,
@@ -5,7 +7,8 @@ import {
   StyleSheet,
   Text,
   View,
-  Button
+  Linking,
+  Button, Switch, TouchableOpacity, Alert
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import { useLayoutEffect, useEffect, useState } from "react";
@@ -13,9 +16,11 @@ import React from "react";
 import { Feather } from "@expo/vector-icons";
 import { SelectList } from "react-native-dropdown-select-list";
 import { Calendar, LocaleConfig } from "react-native-calendars";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, Entypo } from "@expo/vector-icons";
 import { TextInput } from "react-native";
 import { firebaseApp } from '../config';
+// import * as maptilersdk from '@maptiler/sdk';
+import { FontAwesome } from "@expo/vector-icons";
 
 import {
   getFirestore
@@ -37,21 +42,142 @@ const fetchDataFromThingSpeak = async () => {
     }
 
     const data = await response.json();
-    return data.feeds[0]; 
+    console.log(data.feeds[data.feeds.length - 1]);
+    return data.feeds[data.feeds.length - 1]
+    
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return null;
+  }
+};
+const fetchDataFromThingSpeakLoc= async () => {
+  const API_KEY = "GZ672LVUYNM59ZJS"; // Replace with your ThingSpeak API key
+  const CHANNEL_ID = "2382415"; // Replace with your ThingSpeak channel ID
+  const URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${API_KEY}`;
+
+  try {
+    const response = await fetch(URL);
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok.");
+    }
+
+    const data = await response.json();
+    console.log(data.feeds[data.feeds.length-1]);
+    // console.log(data.feeds[data.feeds.length-1].field1);
+    let latitude=data.feeds[data.feeds.length-1].field1
+    // console.log(data.feeds[data.feeds.length-1].field2);
+    let longitude=data.feeds[data.feeds.length-1].field2;
+    return {latitude, longitude};
+    
   } catch (error) {
     console.error("Error fetching data:", error);
     return null;
   }
 };
 
-const HomeScreen = () => {
+const HomeScreen = ( ) => {
+  // const { currentUser } = route.params;
   const navigation = useNavigation();
   const [selected, setSelected] = React.useState("");
   const [selectedDate, setSelectedDate] = React.useState("");
   const [isCalendarVisible, setIsCalendarVisible] = React.useState(false);
   const [growthStage, setGrowthStage] = React.useState("select sowing date");
   const [fieldData, setFieldData] = React.useState(null);
-  const [distance, setDistance] = React.useState("");
+  const [distance, setDistance] = React. useState("");
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [isValveOn, setIsValveOn] = React.useState(false);
+  const [stageInstances, setStageInstances] = React.useState([]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: true,
+      title: "Happy Plant",
+      headerTitleStyle: {
+        fontSize: 20,
+        fontWeight: "bold",
+        color: "white"
+      },
+      headerStyle: {
+        backgroundColor: "#2f8000",
+        height: 110,
+        borderBottomColor: "transparent",
+        shadowColor: "transparent"
+      },
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 25 }}
+          onPress={() => openGoogleMapsApp()}
+        >
+          <FontAwesome name="map-marker" size={30} color="white" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+  const openGoogleMapsApp = async() => {
+    // Example coordinates (replace with your desired location)
+    try {
+      const locationData = await fetchDataFromThingSpeakLoc();
+  
+      if (locationData) {
+        const { latitude, longitude } = locationData;
+        console.log("Latitude:", latitude);
+        console.log("Longitude:", longitude);
+  
+        if (Platform.OS === 'android') {
+          // On Android, use a URI scheme to open Google Maps
+          Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}`);
+        } else {
+          // On iOS, use a different URI scheme
+          Linking.openURL(`maps://app?daddr=${latitude},${longitude}&dirflg=d`);
+        }
+      } else {
+        console.log("Failed to fetch location data");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+};
+
+  useEffect(() => {
+    // Fetch initial value from Ubidots when the component mounts
+    fetchCurrentValue();
+  }, []);
+  const fetchCurrentValue = async () => {
+    try {
+      const currentValue = await getVariableDataFromUbidots();
+      setIsValveOn(currentValue === 1);
+    } catch (error) {
+      console.error("Error fetching current value:", error);
+    }
+  };
+    const handleToggleSwitch = async () => {
+      try {
+        // Toggle the value
+        const newValue = isValveOn ? 0 : 1;
+  
+        // Send the updated value to Ubidots
+        await sendValueToUbidots(newValue);
+  
+        // Update the local state
+        setIsValveOn(!isValveOn);
+      } catch (error) {
+        console.error("Error toggling switch:", error);
+      }
+    };
+  const fetchData = async () => {
+    setRefreshing(true); 
+
+    try {
+      const data = await fetchDataFromThingSpeak();
+      setFieldData(data);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setRefreshing(false); // Set refreshing to false when data fetch completes (or encounters an error)
+    }
+  };
+
 
   const handleSubmit = async () => {
     try {
@@ -74,6 +200,7 @@ const HomeScreen = () => {
   const toggleCalendar = () => {
     setIsCalendarVisible(!isCalendarVisible);
   };
+
 
   const data = [
     { key: "0", value: "Type your plant", disabled: true },
@@ -102,26 +229,8 @@ const HomeScreen = () => {
     { name: "Flowering", start: 60, end: 79 },
     { name: "Pollination", start: 80, end: 99 },
     { name: "Fruit Formation", start: 100, end: 119 },
-    { name: "Ripening", start: 120, end: 150 }
+    { name: "Ripening", start: 120, end: 150 },
   ];
-
-  const stageInstances = stages.map(stage => {
-    const startDate = new Date(selectedDate);
-    console.log(selectedDate);
-    const startOffset = stage.start;
-    const endOffset = stage.end;
-  
-    const startDay = new Date(startDate.setDate(startDate.getDate() + startOffset));
-    const endDay = new Date(startDate.setDate(startDate.getDate() + (endOffset - startOffset)));
-    
-    
-    // Check if the current date is within the stage range
-    const currentDate = new Date(); // Current date
-    const isCompleted = currentDate > endDay;
-  
-    return new Stage(stage.name,startDay.toLocaleDateString() ,endDay.toLocaleDateString(), isCompleted);
-  });
-  
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -143,17 +252,18 @@ const HomeScreen = () => {
 
   //fetch thingspeak data
   useEffect(() => {
-    async function fetchData() {
-      const data = await fetchDataFromThingSpeak();
-      setFieldData(data);
-    }
+    fetchData(); // Fetch data when the component mounts
 
-    fetchData();
+    // Set up an interval to fetch data every X milliseconds (e.g., every 5 minutes)
+    const refreshInterval = setInterval(() => {
+      fetchData();
+    }, 2 * 60 * 1000000000); // Adjust the interval as needed previiousy 100 or 1000
+
+
+    // Clear the interval when the component is unmounted
+    return () => clearInterval(refreshInterval);
   }, []);
 
-  const currentStage = stageInstances.find(
-    (stage) => stage.name === "Germination"
-  );
 
   const determineGrowthStage = (date) => {
     const selected = new Date(date);
@@ -163,7 +273,47 @@ const HomeScreen = () => {
       setGrowthStage("Future date");
       return; // Exit the function
     }
+    const formattedDate = new Date(date);
+    const fDate = `${formattedDate.getFullYear()}-${String(
+      formattedDate.getMonth() + 1
+    ).padStart(2, "0")}-${String(formattedDate.getDate()).padStart(2, "0")}`;
+
+    console.log("formatted date is :" + formattedDate);
+
+    const newStageInstances = stages.map((stage) => {
+      const startOffset = stage.start;
+      const endOffset = stage.end;
+
+      const startDate = fDate; // Use the formatted date here
+
+      const startDay = new Date(startDate);
+      startDay.setDate(startDay.getDate() + startOffset);
+      const endDay = new Date(startDate);
+
+      endDay.setDate(endDay.getDate() + endOffset);
+      // Check if the current date is within the stage range
+      const currentDate = new Date(); // Current date
+      const isCompleted = currentDate > endDay;
+
+      console.log(stage.name+"-"+startDay.toLocaleDateString("en-GB")+"-"+endDay.toLocaleDateString("en-GB")+":"+isCompleted);
+      return new Stage(
+        stage.name,
+        startDay.toLocaleDateString("en-GB"),//remove en-GB for ios
+        endDay.toLocaleDateString("en-GB"),
+        isCompleted
+      );
+    });
+    setStageInstances(newStageInstances);
     // Calculate the difference in days between selectedDate and today
+    if (formattedDate instanceof Date) {
+      const fDate = `${formattedDate.getFullYear()}-${String(
+        formattedDate.getMonth() + 1
+      ).padStart(2, "0")}-${String(formattedDate.getDate()).padStart(2, "0")}`;
+      console.log(fDate);
+    } else {
+      console.error("selectedDate is not a valid Date object");
+      // Handle this case accordingly, such as setting a default date or informing the user about the issue.
+    }
     const differenceInTime = today.getTime() - selected.getTime();
     const differenceInDays = differenceInTime / (1000 * 3600 * 24);
     // Define stages
@@ -181,12 +331,28 @@ const HomeScreen = () => {
       setGrowthStage("Fruit Formation");
     } else if (differenceInDays >= 120 && differenceInDays < 150) {
       setGrowthStage("Ripening");
+    }else if (differenceInDays >= 150) {
+      setGrowthStage("Completed");
     }
   };
 
-  const completedStages = stageInstances.filter((stage) => stage.completed);
-  const currentDate = new Date();
-  const valvePosition = fieldData && fieldData.field1 === 1 ? "On" : "Off";
+  // const completedStages = stageInstances.filter((stage) => stage.completed);
+  // const currentDate = new Date();
+  const currentStage =
+  stageInstances &&
+  stageInstances.find((stage) => stage.name === growthStage);
+let nextStage = null;
+
+if (currentStage) {
+  const currentIndex = stageInstances.indexOf(currentStage);
+
+  if (currentIndex !== -1 && currentIndex < stageInstances.length - 1) {
+    nextStage = stageInstances[currentIndex + 1];
+  }
+}
+console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
+
+  const valvePosition = fieldData && fieldData.field1 === "1" ? "Off" : "On";
 
   return (
     <View>
@@ -239,9 +405,21 @@ const HomeScreen = () => {
             {isCalendarVisible ? (
               <Calendar
                 onDayPress={(day) => {
+                  // const date = new Date(day.dateString);
+                  const selectedDate = new Date(day.dateString);
+                  const today = new Date(); // Get today's date
+                  if (selectedDate > today) {
+                    Alert.alert(
+                      'Warning',
+                      'Please select a sowing date on or before today',
+                      [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+                    );
+                    return;
+                  }
+                
                   setSelectedDate(day.dateString);
-                  toggleCalendar();
                   determineGrowthStage(day.dateString);
+                  toggleCalendar();
                 }}
                 markedDates={{
                   [selectedDate]: {
@@ -313,7 +491,7 @@ const HomeScreen = () => {
           Empowering Growth, One Leaf at a Time
         </Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <Pressable
+        <ScrollView
             style={{
               width: 300,
               height: 250,
@@ -324,6 +502,7 @@ const HomeScreen = () => {
               marginHorizontal: 20
             }}
           >
+           
             <Text
               style={{
                 color: "white",
@@ -334,8 +513,71 @@ const HomeScreen = () => {
             >
               Stages of Growth
             </Text>
-            <Text>{growthStage}</Text>
-          </Pressable>
+            {stageInstances && stageInstances.length > 0 && (
+              <View>
+                <Text
+                  style={{
+                    color: "brown",
+                    fontSize: 13,
+                    marginVertical: 7
+                  }}
+                >
+                  Completed Stages:
+                </Text>
+                {stageInstances
+                  .filter((stage) => stage.completed)
+                  .map((completedStage) => (
+                    <Text
+                      key={completedStage.name}
+                      style={{
+                        color: "white",
+                        fontSize: 12,
+                        marginVertical: 7
+                      }}
+                    >
+                      {completedStage.name}: {completedStage.startDate} -{" "}
+                      {completedStage.endDate}
+                    </Text>
+                  ))}
+
+                <Text style={{
+                    color: "#90EE90",
+                    fontSize: 13,
+                    marginVertical: 7
+                  }}>Current stage:</Text>
+                <Text
+                  style={{
+                    color: "white",
+                    fontSize: 12,
+                    marginVertical: 7
+                  }}
+                >
+                  {growthStage} 
+                  {/* ending on {currentStage && currentStage.endDate} */}
+                </Text>
+
+                {nextStage && (
+                  <React.Fragment>
+                    <Text style={{
+                        color: "#FFDF00",
+                        fontSize: 13,
+                        marginVertical: 7
+                      }}>Upcoming stage:</Text>
+                    <Text
+                      style={{
+                        color: "white",
+                        fontSize: 12,
+                        marginVertical: 7
+                      }}
+                    >
+                      {nextStage.name} starting on {nextStage.startDate}
+                    </Text>
+                  </React.Fragment>
+                )}
+              </View>
+            )}
+
+          </ScrollView>
 
           <Pressable
             style={{
@@ -377,6 +619,16 @@ const HomeScreen = () => {
                 </Text>
               </View>
             )}
+             <View style={{ position: "absolute", top: 10, right: 10 }}>
+            <Switch
+              value={!isValveOn}
+              onValueChange={handleToggleSwitch}
+              ios_backgroundColor="#3e3e3e"
+              thumbColor={isValveOn ? "#f4f3f4" : "2f8000"}
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              
+            />
+          </View>
           </Pressable>
 
           <Pressable
@@ -409,5 +661,3 @@ const HomeScreen = () => {
 };
 
 export default HomeScreen;
-
-const styles = StyleSheet.create({});
