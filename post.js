@@ -22,6 +22,6 @@ const sendValueToUbidots = async (value) => {
         console.error("Error sending data to Ubidots:", error);
     }
     };
-    const valueToSend = 0; 
-    sendValueToUbidots( valueToSend);
+    // const valueToSend = 0; 
+    // sendValueToUbidots( valueToSend);
     export {sendValueToUbidots}

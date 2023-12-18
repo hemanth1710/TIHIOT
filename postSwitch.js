@@ -22,6 +22,6 @@ const sendValueToUbidotsSwitch = async (value) => {
         console.error("Error sending data to Ubidots:", error);
     }
     };
-    // const valueToSend = 0; 
+    // const valueToSend = 1; 
     // sendValueToUbidots( valueToSend);
     export {sendValueToUbidotsSwitch}

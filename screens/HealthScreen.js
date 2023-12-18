@@ -65,6 +65,7 @@ const HealthScreen = () => {
 
             if (firestoreDoc.exists()) {
               const firestoreData = firestoreDoc.data();
+             
               return {
                 id: documentId,
                 imageUrl: url,
@@ -82,9 +83,19 @@ const HealthScreen = () => {
       );
 
       const filteredData = data.filter((item) => item !== null);
-
-        const sortedData = filteredData.sort((a, b) => (b.imageDetails[selectedFilter] || 0) - (a.imageDetails[selectedFilter] || 0));
-      setPhotoData(sortedData);
+        // console.log(2['timestamp'])
+        let sortedData;
+  if (selectedFilter === 'Date') {
+    sortedData = filteredData.sort((a, b) => {
+      const dateA = a.imageDetails?.timestamp?.toDate();
+      const dateB = b.imageDetails?.timestamp?.toDate();
+      return dateB - dateA; // Sort in descending order based on date
+    });
+  }
+  else{
+        sortedData = filteredData.sort((a, b) => (b.imageDetails[selectedFilter] || 0) - (a.imageDetails[selectedFilter] || 0));
+  }
+  setPhotoData(sortedData);
     } catch (error) {
       console.error('Error fetching photo data from Storage:', error);
     }
@@ -109,8 +120,11 @@ const HealthScreen = () => {
         {item.imageDetails ? (
           <>
             <Text style={styles.detailsText}>
-              Dried: {item.imageDetails['Dried']}{'\n'}
-              Early Blight: {item.imageDetails['Early Blight']}{'\n'}Healthy: {item.imageDetails['Healthy']}{'\n'}Late Blight: {item.imageDetails['Late Blight']}
+            {item.imageDetails['Dried'] && `Dried: ${item.imageDetails['Dried']}\n`}
+            {item.imageDetails['Early Blight'] && `Early Blight: ${item.imageDetails['Early Blight']}\n`}
+            {item.imageDetails['Healthy'] && `Healthy: ${item.imageDetails['Healthy']}\n`}
+            {item.imageDetails['Late Blight'] && `Late Blight: ${item.imageDetails['Late Blight']}\n`}
+            {item.imageDetails['timestamp'] && `Date: ${(item.imageDetails['timestamp'].toDate().toDateString())}`} 
             </Text>
           </>
         ) : (
@@ -202,6 +216,15 @@ const HealthScreen = () => {
           >
             <Text style={selectedFilter === 'Healthy' ? styles.selectedFilterText : styles.filterText}>Healthy</Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.filterOption, selectedFilter === 'Date' && styles.selectedFilter]}
+            onPress={() => {
+              setFilterModalVisible(false);
+              setSelectedFilter('Date');
+            }}
+          >
+            <Text style={selectedFilter === 'Date' ? styles.selectedFilterText : styles.filterText}>Date</Text>
+            </TouchableOpacity>
         </View>
       </Modal>
     </View>

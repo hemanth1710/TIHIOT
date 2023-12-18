@@ -1,7 +1,7 @@
 import { useLayoutEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet,Pressable, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet,Pressable, ScrollView, TouchableOpacity} from 'react-native';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut  } from 'firebase/auth';
 import { Auth } from "../config";
 import { Feather, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -81,8 +81,13 @@ const ProfileScreen = () => {
 
   return (
     <ScrollView>
+      <View style={{ marginVertical: 28, alignItems: "center" }}>
+            {currentUser && (
+              <Text style={{ fontSize: 16, fontWeight: "bold" }}>Current User: {currentUser}</Text>
+            )}
+          </View>
     <View style={{
-      paddingTop: 200
+      paddingTop: 100
     }}>
       
 <View style={{
@@ -126,25 +131,31 @@ const ProfileScreen = () => {
       onChangeText={(text) => setPassword(text)}
     />
   </View>
-  <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C" }}>
+  {/* <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C" }}>
     
     <Button title="Sign Up" onPress={handleSignUp} />
-  </View>
-  <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C" }}>
-    <Button title="Sign In" onPress={handleSignIn} />
+  </View> */}
+  <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C", backgroundColor: "#2f8000" }}>
+  <TouchableOpacity
+      style={styles.button}
+      onPress={handleSignIn}
+    >
+      <Text style={styles.buttonText}>Sign In</Text>
+    </TouchableOpacity>
   </View>
 
-  <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C" }}>
-        <Button title="Logout" onPress={handleLogout} />
+  <View style={{ flexDirection: "column", justifyContent: "space-around", borderWidth:2,borderColor: "#FFC72C", backgroundColor: "#2f8000" }}>
+  <TouchableOpacity
+      style={styles.button}
+      onPress={handleLogout}
+    >
+      <Text style={styles.buttonText}>Log Out</Text>
+    </TouchableOpacity>
   </View>
 
 
 </View>
-<View style={{ marginVertical: 20, alignItems: "center" }}>
-            {currentUser && (
-              <Text style={{ fontSize: 18, fontWeight: "bold" }}>Current User: {currentUser}</Text>
-            )}
-          </View>
+
 
 
 
@@ -153,6 +164,17 @@ const ProfileScreen = () => {
     </ScrollView>
   );
 };
-
-
+const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#2f8000',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+  },
+});
 export default ProfileScreen;

@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import React from "react";
-import { NavigationContainer } from "@react-navigation/native";
+import { NavigationContainer, getFocusedRouteNameFromRoute  } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import HomeScreen from "./screens/HomeScreen";
@@ -32,6 +32,7 @@ const StackNavigator = () => {
               ) : (
                 <AntDesign name="home" size={24} color="black" />
               ),
+              tabBarHideOnKeyboard:true
           }}
         />
 
@@ -47,6 +48,7 @@ const StackNavigator = () => {
               ) : (
                 <FontAwesome name="heartbeat" size={24} color="black" />
               ),
+              tabBarHideOnKeyboard:true
           }}
         />
 
@@ -62,13 +64,14 @@ const StackNavigator = () => {
               ) : (
                 <Feather name="bookmark" size={24} color="black" />
               ),
+              tabBarHideOnKeyboard:true
           }}
         />
 
-        <Tab.Screen
+<Tab.Screen
           name="Profile"
           component={ProfileScreen}
-          options={{
+          options={({ route }) => ({
             tabBarLabel: "Profile",
             headerShown: false,
             tabBarIcon: ({ focused }) =>
@@ -77,7 +80,9 @@ const StackNavigator = () => {
               ) : (
                 <Ionicons name="person-outline" size={24} color="black" />
               ),
-          }}
+              tabBarHideOnKeyboard:true,
+              tabBarVisible: getFocusedRouteNameFromRoute(route) != "Profile"  // Hide the tab bar when "Profile" tab is active
+          })}
         />
       </Tab.Navigator>
     );

@@ -78,8 +78,8 @@ const fetchDataFromThingSpeakLoc= async () => {
   }
 };
 
-const HomeScreen = ( ) => {
-  // const { currentUser } = route.params;
+const HomeScreen = ( {route}) => {
+  const { currentUser } = route.params;
   const navigation = useNavigation();
   const [selected, setSelected] = React.useState("");
   const [selectedDate, setSelectedDate] = React.useState("");
@@ -91,6 +91,15 @@ const HomeScreen = ( ) => {
   const [isValveOn, setIsValveOn] = React.useState(false);
   const [stageInstances, setStageInstances] = React.useState([]);
   const [isSwitchOn, setIsSwitchOn]=React.useState(false)
+  const [speedOfImage, setSpeedOfImage] = React.useState("");
+  const botSpeed=2;
+  const calculateSpeed = () => {
+      const spd = distance / botSpeed;
+      setSpeedOfImage(spd);
+  };
+  useEffect(() => {
+    calculateSpeed(parseFloat(distance), parseFloat(botSpeed));
+  }, [distance, botSpeed]);
     useLayoutEffect(() => {
     navigation.setOptions({
       headerShown: true,
@@ -144,25 +153,38 @@ const HomeScreen = ( ) => {
   useEffect(() => {
     // Fetch initial value from Ubidots when the component mounts
     fetchCurrentValue();
+    currentValueSwitch();
   }, []);
   const fetchCurrentValue = async () => {
     try {
       const currentValue = await getVariableDataFromUbidots();
-      const currentSwitchValue= await getVariableDataFromUbidotsSwitch();
-      setIsSwitchOn(currentSwitchValue === 1)
       setIsValveOn(currentValue === 1);
     } catch (error) {
       console.error("Error fetching current value:", error);
     }
   };
+  const currentValueSwitch = async () =>{
+
+    try{
+      const currentSwitchValue= await getVariableDataFromUbidotsSwitch();
+      setIsSwitchOn(currentSwitchValue === 1)
+    }
+    catch(error)
+    {
+      console.error("error fetching switch value:", error);
+    }
+  };
     const handleToggleSwitch = async () => {
       try {
         // Toggle the value
+        if (isValveOn === 1) {
+          alert("Valve Turned on");
+        }
         const newValue = isValveOn ? 0 : 1;
   
         // Send the updated value to Ubidots
         await sendValueToUbidots(newValue);
-  
+        
         // Update the local state
         setIsValveOn(!isValveOn);
       } catch (error) {
@@ -172,6 +194,9 @@ const HomeScreen = ( ) => {
     const handleToggleSwitchKill = async () => {
       try {
         // Toggle the value
+        if (isSwitchOn === 1) {
+          alert("Switch Turned on");
+        }
         const newValue = isSwitchOn ? 0 : 1;
   
         // Send the updated value to Ubidots
@@ -199,7 +224,7 @@ const HomeScreen = ( ) => {
 
   const handleSubmit = async () => {
     try {
-      const plantDocRef = doc(db, "plantDetails", selected); 
+      const plantDocRef = doc(db, "plantDetails", currentUser); 
       const plantData = {
         plantType: selected,
         sowingDate: selectedDate,
@@ -361,6 +386,11 @@ const HomeScreen = ( ) => {
   stageInstances.find((stage) => stage.name === growthStage);
 let nextStage = null;
 
+const harvestingStage =
+stageInstances &&
+stageInstances.find((stage) => stage.name === "Ripening");
+
+
 if (currentStage) {
   const currentIndex = stageInstances.indexOf(currentStage);
 
@@ -384,6 +414,9 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
           }}
         >
           {/* Dropdown box */}
+          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+            <Text style={{ textAlign: "center", fontWeight:"bold", fontFamily:"Roboto", fontSize:20}}>Enter Plant Details</Text>
+          </View>
           <Pressable
             style={{
               flexDirection: "row",
@@ -400,6 +433,7 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
 
             <View style={{ flex: 1 }}>
               <SelectList
+                placeholder="Select type of plant"
                 setSelected={(val) => setSelected(val)}
                 data={data}
                 save="value"
@@ -505,18 +539,19 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
           </Pressable>
         </View>
 
-        <Text style={{ marginHorizontal: 20, fontSize: 17, fontWeight: "500" }}>
+        {/* <Text style={{ marginHorizontal: 20, fontSize: 17, fontWeight: "500" }}>
           Empowering Growth, One Leaf at a Time
-        </Text>
+        </Text> */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <ScrollView
+        nestedScrollEnabled={true}
             style={{
               width: 300,
               height: 250,
               marginTop: 10,
               backgroundColor: "#2f8000",
               borderRadius: 10,
-              padding: 20,
+              padding: 10,
               marginHorizontal: 20
             }}
           >
@@ -526,7 +561,7 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
                 color: "white",
                 fontSize: 15,
                 fontWeight: "bold",
-                marginVertical: 7
+                marginVertical:3
               }}
             >
               Stages of Growth
@@ -535,9 +570,9 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
               <View>
                 <Text
                   style={{
-                    color: "brown",
+                    color: "orange",
                     fontSize: 13,
-                    marginVertical: 7
+                    marginVertical: 2
                   }}
                 >
                   Completed Stages:
@@ -570,17 +605,16 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
                     marginVertical: 7
                   }}
                 >
-                  {growthStage} 
-                  {/* ending on {currentStage && currentStage.endDate} */}
+                 {growthStage} ending on {currentStage && currentStage.endDate} 
                 </Text>
 
-                {nextStage && (
-                  <React.Fragment>
-                    <Text style={{
+
+                <Text style={{
                         color: "#FFDF00",
                         fontSize: 13,
                         marginVertical: 7
-                      }}>Upcoming stage:</Text>
+                      }}>Harvesting Date:</Text>
+                
                     <Text
                       style={{
                         color: "white",
@@ -588,10 +622,9 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
                         marginVertical: 7
                       }}
                     >
-                      {nextStage.name} starting on {nextStage.startDate}
+                      Harvesting starting on {nextStage && nextStage.startDate}
                     </Text>
-                  </React.Fragment>
-                )}
+
               </View>
             )}
 
@@ -608,6 +641,21 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
               marginHorizontal: 20
             }}
           >
+                       <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
+      Irrigation Switch
+    </Text>
+             <View style={{ position: "absolute",  right: 10 }}>
+            <Switch
+              value={!isValveOn}
+              onValueChange={handleToggleSwitch}
+              ios_backgroundColor="#3e3e3e"
+              thumbColor={isValveOn ? "#f4f3f4" : "2f8000"}
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+              
+            />
+          </View>
+          </View>
             <Text
               style={{
                 color: "white",
@@ -637,51 +685,48 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
                 </Text>
               </View>
             )}
-             <View style={{ position: "absolute", top: 10, right: 10 }}>
-            <Switch
-              value={!isValveOn}
-              onValueChange={handleToggleSwitch}
-              ios_backgroundColor="#3e3e3e"
-              thumbColor={isValveOn ? "#f4f3f4" : "2f8000"}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              
-            />
-          </View>
+ 
           </Pressable>
 
           <Pressable
-            style={{
-              width: 300,
-              height: 250,
-              marginTop: 10,
-              backgroundColor: "#2f8000",
-              borderRadius: 10,
-              padding: 20,
-              marginHorizontal: 20
-            }}
-          >
-            <Text
-              style={{
-                color: "white",
-                fontSize: 15,
-                fontWeight: "bold",
-                marginVertical: 7
-              }}
-            ></Text>
-            <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
-              Bot is capturing image at the speed of 2 images/second
-            </Text>
-            <View style={{ position: "absolute", top: 10, right: 10 }}>
-            <Switch
-              value={!isSwitchOn}
-              onValueChange={handleToggleSwitchKill}
-              ios_backgroundColor="#3e3e3e"
-              thumbColor={isSwitchOn ? "#f4f3f4" : "2f8000"}
-              trackColor={{ false: "#767577", true: "#81b0ff" }}
-              
-            />
-          </View>
-          </Pressable>
+  style={{
+    width: 300,
+    height: 250,
+    marginTop: 10,
+    backgroundColor: "#2f8000",
+    borderRadius: 10,
+    padding: 20,
+    marginHorizontal: 20
+  }}
+>
+  <View style={{ flexDirection: "row", alignItems: "center" }}>
+    <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
+      Start the bot
+    </Text>
+    <View style={{ position: "absolute", right: 10 }}>
+      <Switch
+        value={!isSwitchOn}
+        onValueChange={handleToggleSwitchKill}
+        ios_backgroundColor="#3e3e3e"
+        thumbColor={isSwitchOn ? "#f4f3f4" : "2f8000"}
+        trackColor={{ false: "#767577", true: "#81b0ff" }}
+      />
+    </View>
+  </View>
+  <Text
+    style={{
+      color: "white",
+      fontSize: 15,
+      fontWeight: "bold",
+      marginVertical: 5
+    }}
+  >
+  </Text>
+  <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
+    Bot is capturing image {speedOfImage} images/second{'\n'}
+    To get the location of Bot click the map icon at the top right
+  </Text>
+</Pressable>
         </ScrollView>
       </ScrollView>
     </View>
