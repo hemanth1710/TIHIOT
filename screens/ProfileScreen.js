@@ -43,6 +43,7 @@ const ProfileScreen = () => {
     setEmail('');
     setPassword('')
     // Redirect to the Home screen with the user ID as a prop
+    
     navigation.navigate('Home', { currentUser: email });
   } catch (error) {
     console.error('Sign-in error:', error.message);
@@ -78,8 +79,9 @@ const ProfileScreen = () => {
       console.error('Logout error:', error.message);
     }
   };
-
+  
   return (
+
     <ScrollView>
       <View style={{ marginVertical: 28, alignItems: "center" }}>
             {currentUser && (
@@ -155,14 +157,10 @@ const ProfileScreen = () => {
 
 
 </View>
-
-
-
-
-
     </View>
     </ScrollView>
   );
+
 };
 const styles = StyleSheet.create({
   button: {

@@ -17,7 +17,15 @@ const StackNavigator = () => {
   const Tab = createBottomTabNavigator();
   const Stack = createNativeStackNavigator();
 
+  
   function BottomTabs() {
+    const getroute = (route) => {
+      const routename = getFocusedRouteNameFromRoute(route);
+      if (routename?.includes('Profile')) {
+        return "none";
+      }
+      return "flex";
+    };
     return (
       <Tab.Navigator initialRouteName="Profile">
         <Tab.Screen
@@ -72,6 +80,7 @@ const StackNavigator = () => {
           name="Profile"
           component={ProfileScreen}
           options={({ route }) => ({
+            tabBarStyle: {display:'none'},
             tabBarLabel: "Profile",
             headerShown: false,
             tabBarIcon: ({ focused }) =>
@@ -81,16 +90,17 @@ const StackNavigator = () => {
                 <Ionicons name="person-outline" size={24} color="black" />
               ),
               tabBarHideOnKeyboard:true,
-              tabBarVisible: getFocusedRouteNameFromRoute(route) != "Profile"  // Hide the tab bar when "Profile" tab is active
+                // Hide the tab bar when "Profile" tab is active
           })}
         />
       </Tab.Navigator>
     );
+
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Profile">
+      <Stack.Navigator >
         <Stack.Screen name="Main" component={BottomTabs} options={{ headerShown: false }} />
       </Stack.Navigator>
     </NavigationContainer>

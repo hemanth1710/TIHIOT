@@ -80,6 +80,7 @@ const fetchDataFromThingSpeakLoc= async () => {
 
 const HomeScreen = ( {route}) => {
   const { currentUser } = route.params;
+ 
   const navigation = useNavigation();
   const [selected, setSelected] = React.useState("");
   const [selectedDate, setSelectedDate] = React.useState("");
@@ -542,10 +543,13 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
         {/* <Text style={{ marginHorizontal: 20, fontSize: 17, fontWeight: "500" }}>
           Empowering Growth, One Leaf at a Time
         </Text> */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+        
+        <ScrollView nestedScrollEnabled={true} horizontal showsHorizontalScrollIndicator={false}>
+        <View style={{flex: 1}}>
         <ScrollView
-        nestedScrollEnabled={true}
+       
             style={{
+              // flexGrow: 1,
               width: 300,
               height: 250,
               marginTop: 10,
@@ -567,68 +571,53 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
               Stages of Growth
             </Text>
             {stageInstances && stageInstances.length > 0 && (
-              <View>
+          <View>
+            {/* Completed Stages */}
+            <Text style={{ color: "orange", fontSize: 13, marginVertical: 2, marginBottom:10 }}>
+              Completed Stages:
+            </Text>
+            {stageInstances
+              .filter((stage) => stage.completed)
+              .map((completedStage) => (
                 <Text
-                  style={{
-                    color: "orange",
-                    fontSize: 13,
-                    marginVertical: 2
-                  }}
-                >
-                  Completed Stages:
-                </Text>
-                {stageInstances
-                  .filter((stage) => stage.completed)
-                  .map((completedStage) => (
-                    <Text
-                      key={completedStage.name}
-                      style={{
-                        color: "white",
-                        fontSize: 12,
-                        marginVertical: 7
-                      }}
-                    >
-                      {completedStage.name}: {completedStage.startDate} -{" "}
-                      {completedStage.endDate}
-                    </Text>
-                  ))}
-
-                <Text style={{
-                    color: "#90EE90",
-                    fontSize: 13,
-                    marginVertical: 7
-                  }}>Current stage:</Text>
-                <Text
+                  key={completedStage.name}
                   style={{
                     color: "white",
                     fontSize: 12,
                     marginVertical: 7
                   }}
                 >
-                 {growthStage} ending on {currentStage && currentStage.endDate} 
+                  {completedStage.name}: {completedStage.startDate} - {completedStage.endDate}
                 </Text>
+              ))}
 
-
-                <Text style={{
-                        color: "#FFDF00",
-                        fontSize: 13,
-                        marginVertical: 7
-                      }}>Harvesting Date:</Text>
-                
-                    <Text
-                      style={{
-                        color: "white",
-                        fontSize: 12,
-                        marginVertical: 7
-                      }}
-                    >
-                      Harvesting starting on {nextStage && nextStage.startDate}
-                    </Text>
-
-              </View>
+            {/* Current Stage */}
+            {growthStage !== "Completed" && (
+              <React.Fragment>
+                <Text style={{ color: "#90EE90", fontSize: 13, marginVertical: 7 }}>
+                  Current stage:
+                </Text>
+                <Text style={{ color: "white", fontSize: 12, marginVertical: 7 }}>
+                  {growthStage} ending on {currentStage && currentStage.endDate}
+                </Text>
+              </React.Fragment>
             )}
 
+            {/* Harvesting Date */}
+            {!harvestingStage && (
+              <React.Fragment>
+                <Text style={{ color: "#FFDF00", fontSize: 13, marginVertical: 7 }}>
+                  Harvesting Date:
+                </Text>
+                <Text style={{ color: "white", fontSize: 12, marginVertical: 7, marginBottom:10 }}>
+                  Harvesting starting on {nextStage && nextStage.startDate}
+                </Text>
+              </React.Fragment>
+            )}
+          </View>
+        )}
           </ScrollView>
+          </View>
 
           <Pressable
             style={{
@@ -642,9 +631,9 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
             }}
           >
                        <View style={{ flexDirection: "row", alignItems: "center" }}>
-                <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
-      Irrigation Switch
-    </Text>
+            <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
+                        Irrigation Switch
+            </Text>
              <View style={{ position: "absolute",  right: 10 }}>
             <Switch
               value={!isValveOn}
@@ -722,10 +711,10 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
     }}
   >
   </Text>
-  <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
-    Bot is capturing image {speedOfImage} images/second{'\n'}
-    To get the location of Bot click the map icon at the top right
-  </Text>
+    <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
+      Bot is capturing image {speedOfImage} images/second{'\n'}
+      To get the location of Bot click the map icon at the top right
+    </Text> 
 </Pressable>
         </ScrollView>
       </ScrollView>
