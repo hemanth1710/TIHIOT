@@ -63,13 +63,16 @@ const fetchDataFromThingSpeakLoc= async () => {
     if (!response.ok) {
       throw new Error("Network response was not ok.");
     }
+    let latitude=12.941445;
+    let longitude= 77.565432;
+
 
     const data = await response.json();
     console.log(data.feeds[data.feeds.length-1]);
-    // console.log(data.feeds[data.feeds.length-1].field1);
-    let latitude=data.feeds[data.feeds.length-1].field1
-    // console.log(data.feeds[data.feeds.length-1].field2);
-    let longitude=data.feeds[data.feeds.length-1].field2;
+    // // console.log(data.feeds[data.feeds.length-1].field1);
+    // let latitude=data.feeds[data.feeds.length-1].field1
+    // // console.log(data.feeds[data.feeds.length-1].field2);
+    // let longitude=data.feeds[data.feeds.length-1].field2;
     return {latitude, longitude};
     
   } catch (error) {
@@ -116,40 +119,40 @@ const HomeScreen = ( {route}) => {
         borderBottomColor: "transparent",
         shadowColor: "transparent"
       },
-      headerRight: () => (
-        <TouchableOpacity
-          style={{ marginRight: 25 }}
-          onPress={() => openGoogleMapsApp()}
-        >
-          <FontAwesome name="map-marker" size={30} color="white" />
-        </TouchableOpacity>
-      ),
+      // headerRight: () => (
+      //   <TouchableOpacity
+      //     style={{ marginRight: 25 }}
+      //     onPress={() => openGoogleMapsApp()}
+      //   >
+      //     <FontAwesome name="map-marker" size={30} color="white" />
+      //   </TouchableOpacity>
+      // ),
     });
   }, [navigation]);
-  const openGoogleMapsApp = async() => {
-    // Example coordinates (replace with your desired location)
-    try {
-      const locationData = await fetchDataFromThingSpeakLoc();
+  // const openGoogleMapsApp = async() => {
+//     // Example coordinates (replace with your desired location)
+//     try {
+//       const locationData = await fetchDataFromThingSpeakLoc();
   
-      if (locationData) {
-        const { latitude, longitude } = locationData;
-        console.log("Latitude:", latitude);
-        console.log("Longitude:", longitude);
+//       if (locationData) {
+//         const { latitude, longitude } = locationData;
+//         console.log("Latitude:", latitude);
+//         console.log("Longitude:", longitude);
   
-        if (Platform.OS === 'android') {
-          // On Android, use a URI scheme to open Google Maps
-          Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}`);
-        } else {
-          // On iOS, use a different URI scheme
-          Linking.openURL(`maps://app?daddr=${latitude},${longitude}&dirflg=d`);
-        }
-      } else {
-        console.log("Failed to fetch location data");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-    }
-};
+//         if (Platform.OS === 'android') {
+//           // On Android, use a URI scheme to open Google Maps
+//           Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}`);
+//         } else {
+//           // On iOS, use a different URI scheme
+//           Linking.openURL(`maps://app?daddr=${latitude},${longitude}&dirflg=d`);
+//         }
+//       } else {
+//         console.log("Failed to fetch location data");
+//       }
+//     } catch (error) {
+//       console.error("Error:", error);
+//     }
+// };
 
   useEffect(() => {
     // Fetch initial value from Ubidots when the component mounts

@@ -150,8 +150,10 @@ const BookmarkScreen = () => {
         {item.imageDetails ? (
           <>
             <Text style={styles.detailsText}>
-              Dried: {item.imageDetails['Dried']}{'\n'}
-              Early Blight: {item.imageDetails['Early Blight']}{'\n'}Healthy: {item.imageDetails['Healthy']}{'\n'}Late Blight: {item.imageDetails['Late Blight']}
+             {item.imageDetails['Early Blight'] && `Early Blight: ${item.imageDetails['Early Blight']}\n`}
+            {item.imageDetails['Healthy'] && `Healthy: ${item.imageDetails['Healthy']}\n`}
+            {item.imageDetails['Late Blight'] && `Late Blight: ${item.imageDetails['Late Blight']}\n`}
+            {item.imageDetails['timestamp'] && `Date: ${(item.imageDetails['timestamp'].toDate().toDateString())}`} 
             </Text>
           </>
         ) : (
