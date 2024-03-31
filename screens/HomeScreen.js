@@ -304,7 +304,7 @@ const HomeScreen = ( {route}) => {
     // Set up an interval to fetch data every X milliseconds (e.g., every 5 minutes)
     const refreshInterval = setInterval(() => {
       fetchData();
-    }, 2 * 60 * 100); // Adjust the interval as needed previiousy 100 or 1000
+    }, 2 * 60 * 1000); // Adjust the interval as needed previiousy 100 or 1000
 
 
     // Clear the interval when the component is unmounted
