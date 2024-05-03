@@ -4,9 +4,11 @@ import { NavigationContainer, getFocusedRouteNameFromRoute  } from "@react-navig
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import HomeScreen from "./screens/HomeScreen";
+import CameraScreen from "./screens/Camerascreen";
 import HealthScreen from "./screens/HealthScreen";
 import BookmarkScreen from "./screens/BookmarkScreen";
 import ProfileScreen from "./screens/ProfileScreen";
+import QueryScreen from "./screens/QueryScreen";
 import { AntDesign } from "@expo/vector-icons";
 import { Entypo } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
@@ -67,14 +69,47 @@ const StackNavigator = () => {
             tabBarLabel: "Bookmark",
             headerShown: false,
             tabBarIcon: ({ focused }) =>
-              focused ? (
-                <FontAwesome name="bookmark" size={24} color="#2f8000" />
-              ) : (
-                <Feather name="bookmark" size={24} color="black" />
-              ),
+            focused ? (
+              <FontAwesome name="bookmark" size={24} color="#2f8000" />
+            ) : (
+              <Feather name="bookmark" size={24} color="black" />
+            ),
+              
               tabBarHideOnKeyboard:true
           }}
         />
+        {/* <Tab.Screen
+    name="Camera"
+    component={CameraScreen}
+    options={{
+      tabBarLabel: "Camera",
+      headerShown: false,
+      tabBarIcon: ({ focused }) =>
+      !focused ? (
+        <AntDesign name="camerao" size={24} color="black" />
+      ) : (
+        <AntDesign name="camera" size={24} color="black" />
+      ),
+        
+      tabBarHideOnKeyboard: true,
+    }}
+  /> */}
+          <Tab.Screen
+    name="Query"
+    component={QueryScreen}
+    options={{
+      tabBarLabel: "Query",
+      headerShown: false,
+      tabBarIcon: ({ focused }) =>
+      !focused ? (
+        <Ionicons name="leaf-outline" size={24} color="black" />
+      ) : (
+        <Ionicons name="leaf" size={24} color="black" />
+      ),
+        
+      tabBarHideOnKeyboard: true,
+    }}
+  />
 
 <Tab.Screen
           name="Profile"

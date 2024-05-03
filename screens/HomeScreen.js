@@ -52,6 +52,28 @@ const fetchDataFromThingSpeak = async () => {
     return null;
   }
 };
+const fetchDataFromThingSpeakHel = async () => {
+  const API_KEY = "BAV675W9R3QQ0RC4"; // Replace with your ThingSpeak API key
+  const CHANNEL_ID = "2531014"; // Replace with your ThingSpeak channel ID
+  const URL = `https://api.thingspeak.com/channels/${CHANNEL_ID}/feeds.json?api_key=${API_KEY}`;
+
+  try {
+    const response = await fetch(URL);
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok.");
+    }
+
+    const data = await response.json();
+    console.log(data.feeds[data.feeds.length - 1]);
+    return data.feeds[data.feeds.length - 1];
+    
+    
+  } catch (error) {
+    console.error("Error fetching data:", error);
+    return null;
+  }
+};
 const fetchDataFromThingSpeakLoc= async () => {
   const API_KEY = "GZ672LVUYNM59ZJS"; // Replace with your ThingSpeak API key
   const CHANNEL_ID = "2382415"; // Replace with your ThingSpeak channel ID
@@ -90,6 +112,7 @@ const HomeScreen = ( {route}) => {
   const [isCalendarVisible, setIsCalendarVisible] = React.useState(false);
   const [growthStage, setGrowthStage] = React.useState("select sowing date");
   const [fieldData, setFieldData] = React.useState(null);
+  const [healthData, sethealthData] = React.useState(null);
   const [distance, setDistance] = React. useState("");
   const [refreshing, setRefreshing] = React.useState(false);
   const [isValveOn, setIsValveOn] = React.useState(false);
@@ -97,10 +120,17 @@ const HomeScreen = ( {route}) => {
   const [isSwitchOn, setIsSwitchOn]=React.useState(false)
   const [speedOfImage, setSpeedOfImage] = React.useState("");
   const botSpeed=2;
+  // console.log("hiiiii", healthData);
   const calculateSpeed = () => {
       const spd = distance / botSpeed;
       setSpeedOfImage(spd);
   };
+  useEffect(() => {
+    fetchDataFromThingSpeakHel().then(data => {
+      sethealthData(data);
+    });
+  }, []);
+  
   useEffect(() => {
     calculateSpeed(parseFloat(distance), parseFloat(botSpeed));
   }, [distance, botSpeed]);
@@ -119,44 +149,45 @@ const HomeScreen = ( {route}) => {
         borderBottomColor: "transparent",
         shadowColor: "transparent"
       },
-      // headerRight: () => (
-      //   <TouchableOpacity
-      //     style={{ marginRight: 25 }}
-      //     onPress={() => openGoogleMapsApp()}
-      //   >
-      //     <FontAwesome name="map-marker" size={30} color="white" />
-      //   </TouchableOpacity>
-      // ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 25 }}
+          onPress={() => openGoogleMapsApp()}
+        >
+          <FontAwesome name="map-marker" size={30} color="white" />
+        </TouchableOpacity>
+      ),
     });
   }, [navigation]);
-  // const openGoogleMapsApp = async() => {
-//     // Example coordinates (replace with your desired location)
-//     try {
-//       const locationData = await fetchDataFromThingSpeakLoc();
+  const openGoogleMapsApp = async() => {
+    // Example coordinates (replace with your desired location)
+    try {
+      const locationData = await fetchDataFromThingSpeakLoc();
   
-//       if (locationData) {
-//         const { latitude, longitude } = locationData;
-//         console.log("Latitude:", latitude);
-//         console.log("Longitude:", longitude);
+      if (locationData) {
+        const { latitude, longitude } = locationData;
+        console.log("Latitude:", latitude);
+        console.log("Longitude:", longitude);
   
-//         if (Platform.OS === 'android') {
-//           // On Android, use a URI scheme to open Google Maps
-//           Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}`);
-//         } else {
-//           // On iOS, use a different URI scheme
-//           Linking.openURL(`maps://app?daddr=${latitude},${longitude}&dirflg=d`);
-//         }
-//       } else {
-//         console.log("Failed to fetch location data");
-//       }
-//     } catch (error) {
-//       console.error("Error:", error);
-//     }
-// };
+        if (Platform.OS === 'android') {
+          // On Android, use a URI scheme to open Google Maps
+          Linking.openURL(`geo:${latitude},${longitude}?q=${latitude},${longitude}`);
+        } else {
+          // On iOS, use a different URI scheme
+          Linking.openURL(`maps://app?daddr=${latitude},${longitude}&dirflg=d`);
+        }
+      } else {
+        console.log("Failed to fetch location data");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+};
 
   useEffect(() => {
     // Fetch initial value from Ubidots when the component mounts
     fetchCurrentValue();
+    fetchDataFromThingSpeakHel();
     currentValueSwitch();
   }, []);
   const fetchCurrentValue = async () => {
@@ -407,280 +438,312 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
   const valvePosition = fieldData && fieldData.field1 === "1" ? "Off" : "On";
 
   return (
-    <View>
-      <ScrollView>
-        <View
+<View>
+  <ScrollView>
+    <View
+      style={{
+        margin: 20,
+        borderColor: "#FFC72C",
+        borderWidth: 3,
+        borderRadius: 6
+      }}
+    >
+      {/* Dropdown box */}
+      <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <Text style={{ textAlign: "center", fontWeight:"bold", fontFamily:"Roboto", fontSize:20}}>Enter Plant Details</Text>
+      </View>
+      <Pressable
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 10,
+          borderColor: "#FFC72C",
+          borderWidth: 2,
+          paddingVertical: 15,
+          flex: 1
+        }}
+      >
+        <Feather name="search" size={24} color="black" />
+
+        <View style={{ flex: 1 }}>
+          <SelectList
+            placeholder="Select type of plant"
+            setSelected={(val) => setSelected(val)}
+            data={data}
+            save="value"
+          />
+        </View>
+      </Pressable>
+
+      <Pressable
+        onPress={toggleCalendar}
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 10,
+          borderColor: "#FFC72C",
+          borderWidth: 2,
+          paddingVertical: 15
+        }}
+      >
+        <Feather name="calendar" size={24} color="black" />
+        {isCalendarVisible ? (
+          <Calendar
+            onDayPress={(day) => {
+              const selectedDate = new Date(day.dateString);
+              const today = new Date(); // Get today's date
+              if (selectedDate > today) {
+                Alert.alert(
+                  'Warning',
+                  'Please select a sowing date on or before today',
+                  [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
+                );
+                return;
+              }
+            
+              setSelectedDate(day.dateString);
+              determineGrowthStage(day.dateString);
+              toggleCalendar();
+            }}
+            markedDates={{
+              [selectedDate]: {
+                selected: true,
+                disableTouchEvent: true,
+                selectedDotColor: "orange"
+              }
+            }}
+          />
+        ) : (
+          // Display selected date or placeholder text when the calendar is not visible
+          <Text>
+            {selectedDate ? selectedDate : "Select a sowing date"}
+          </Text>
+        )}
+      </Pressable>
+
+      <Pressable
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 10,
+          paddingHorizontal: 10,
+          borderColor: "#FFC72C",
+          borderWidth: 2,
+          paddingVertical: 15,
+          flex: 1
+        }}
+      >
+        <MaterialCommunityIcons
+          name="map-marker-distance"
+          size={24}
+          color="black"
+        />
+        <TextInput
+          placeholder="Enter distance between plants(in ft)"
+          keyboardType="numeric"
+          value={distance}
+          onChangeText={(text) => setDistance(text)}
+        ></TextInput>
+      </Pressable>
+
+      <Pressable
+        onPress={handleSubmit}
+        style={{
+          gap: 10,
+          paddingHorizontal: 10,
+          borderColor: "#FFC72C",
+          borderWidth: 2,
+          paddingVertical: 15,
+          flex: 1,
+          backgroundColor: "#2f8000"
+        }}
+      >
+        <Text
           style={{
-            margin: 20,
-            borderColor: "#FFC72C",
-            borderWidth: 3,
-            borderRadius: 6
+            textAlign: "center",
+            fontSize: 15,
+            fontWeight: "500",
+            color: "white"
           }}
         >
-          {/* Dropdown box */}
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
-            <Text style={{ textAlign: "center", fontWeight:"bold", fontFamily:"Roboto", fontSize:20}}>Enter Plant Details</Text>
-          </View>
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              paddingHorizontal: 10,
-              borderColor: "#FFC72C",
-              borderWidth: 2,
-              paddingVertical: 15,
-              flex: 1
-            }}
-          >
-            <Feather name="search" size={24} color="black" />
+          Submit
+        </Text>
+      </Pressable>
+    </View>
 
-            <View style={{ flex: 1 }}>
-              <SelectList
-                placeholder="Select type of plant"
-                setSelected={(val) => setSelected(val)}
-                data={data}
-                save="value"
-              />
-            </View>
-          </Pressable>
-
-          <Pressable
-            onPress={toggleCalendar}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              paddingHorizontal: 10,
-              borderColor: "#FFC72C",
-              borderWidth: 2,
-              paddingVertical: 15
-            }}
-          >
-            <Feather name="calendar" size={24} color="black" />
-            {isCalendarVisible ? (
-              <Calendar
-                onDayPress={(day) => {
-                  // const date = new Date(day.dateString);
-                  const selectedDate = new Date(day.dateString);
-                  const today = new Date(); // Get today's date
-                  if (selectedDate > today) {
-                    Alert.alert(
-                      'Warning',
-                      'Please select a sowing date on or before today',
-                      [{ text: 'OK', onPress: () => console.log('OK Pressed') }]
-                    );
-                    return;
-                  }
-                
-                  setSelectedDate(day.dateString);
-                  determineGrowthStage(day.dateString);
-                  toggleCalendar();
-                }}
-                markedDates={{
-                  [selectedDate]: {
-                    selected: true,
-                    disableTouchEvent: true,
-                    selectedDotColor: "orange"
-                  }
-                }}
-              />
-            ) : (
-              // Display selected date or placeholder text when the calendar is not visible
-              <Text>
-                {selectedDate ? selectedDate : "Select a sowing date"}
-              </Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 10,
-              paddingHorizontal: 10,
-              borderColor: "#FFC72C",
-              borderWidth: 2,
-              paddingVertical: 15,
-              flex: 1
-            }}
-          >
-            <MaterialCommunityIcons
-              name="map-marker-distance"
-              size={24}
-              color="black"
-            />
-            <TextInput
-              placeholder="Enter distance between plants(in ft)"
-              keyboardType="numeric"
-              value={distance}
-              onChangeText={(text) => setDistance(text)}
-            ></TextInput>
-          </Pressable>
-
-          <Pressable
-          onPress={handleSubmit}
-            style={{
-              gap: 10,
-              paddingHorizontal: 10,
-              borderColor: "#FFC72C",
-              borderWidth: 2,
-              paddingVertical: 15,
-              flex: 1,
-              backgroundColor: "#2f8000"
-            }}
-          >
-            <Text
-              style={{
-                textAlign: "center",
-                fontSize: 15,
-                fontWeight: "500",
-                color: "white"
-              }}
-            >
-              Submit
-            </Text>
-          </Pressable>
-        </View>
-
-        {/* <Text style={{ marginHorizontal: 20, fontSize: 17, fontWeight: "500" }}>
-          Empowering Growth, One Leaf at a Time
-        </Text> */}
-        
-        <ScrollView nestedScrollEnabled={true} horizontal showsHorizontalScrollIndicator={false}>
-        <View style={{flex: 1}}>
+    <ScrollView nestedScrollEnabled={true} horizontal showsHorizontalScrollIndicator={false}>
+      <View style={{flex: 1}}>
         <ScrollView
-       
+          style={{
+            width: 300,
+            height: 250,
+            marginTop: 10,
+            backgroundColor: "#2f8000",
+            borderRadius: 10,
+            padding: 10,
+            marginHorizontal: 20
+          }}
+        >
+          <Text
             style={{
-              // flexGrow: 1,
-              width: 300,
-              height: 250,
-              marginTop: 10,
-              backgroundColor: "#2f8000",
-              borderRadius: 10,
-              padding: 10,
-              marginHorizontal: 20
+              color: "white",
+              fontSize: 15,
+              fontWeight: "bold",
+              marginVertical:3
             }}
           >
-           
-            <Text
-              style={{
-                color: "white",
-                fontSize: 15,
-                fontWeight: "bold",
-                marginVertical:3
-              }}
-            >
-              Stages of Growth
-            </Text>
-            {stageInstances && stageInstances.length > 0 && (
-          <View>
-            {/* Completed Stages */}
-            <Text style={{ color: "orange", fontSize: 13, marginVertical: 2, marginBottom:10 }}>
-              Completed Stages:
-            </Text>
-            {stageInstances
-              .filter((stage) => stage.completed)
-              .map((completedStage) => (
-                <Text
-                  key={completedStage.name}
-                  style={{
-                    color: "white",
-                    fontSize: 12,
-                    marginVertical: 7
-                  }}
-                >
-                  {completedStage.name}: {completedStage.startDate} - {completedStage.endDate}
-                </Text>
-              ))}
+            Stages of Growth
+          </Text>
+          {stageInstances && stageInstances.length > 0 && (
+            <View>
+              {/* Completed Stages */}
+              <Text style={{ color: "orange", fontSize: 13, marginVertical: 2, marginBottom:10 }}>
+                Completed Stages:
+              </Text>
+              {stageInstances
+                .filter((stage) => stage.completed)
+                .map((completedStage) => (
+                  <Text
+                    key={completedStage.name}
+                    style={{
+                      color: "white",
+                      fontSize: 12,
+                      marginVertical: 7
+                    }}
+                  >
+                    {completedStage.name}: {completedStage.startDate} - {completedStage.endDate}
+                  </Text>
+                ))}
 
-            {/* Current Stage */}
-            {growthStage !== "Completed" && (
-              <React.Fragment>
-                <Text style={{ color: "#90EE90", fontSize: 13, marginVertical: 7 }}>
-                  Current stage:
-                </Text>
-                <Text style={{ color: "white", fontSize: 12, marginVertical: 7 }}>
-                  {growthStage} ending on {currentStage && currentStage.endDate}
-                </Text>
-              </React.Fragment>
-            )}
+              {/* Current Stage */}
+              {growthStage !== "Completed" && (
+                <React.Fragment>
+                  <Text style={{ color: "#90EE90", fontSize: 13, marginVertical: 7 }}>
+                    Current stage:
+                  </Text>
+                  <Text style={{ color: "white", fontSize: 12, marginVertical: 7 }}>
+                    {growthStage} ending on {currentStage && currentStage.endDate}
+                  </Text>
+                </React.Fragment>
+              )}
 
-            {/* Harvesting Date */}
-            {!harvestingStage && (
-              <React.Fragment>
-                <Text style={{ color: "#FFDF00", fontSize: 13, marginVertical: 7 }}>
-                  Harvesting Date:
-                </Text>
-                <Text style={{ color: "white", fontSize: 12, marginVertical: 7, marginBottom:10 }}>
-                  Harvesting starting on {nextStage && nextStage.startDate}
-                </Text>
-              </React.Fragment>
-            )}
-          </View>
-        )}
-          </ScrollView>
-          </View>
+              {/* Harvesting Date */}
+              {!harvestingStage && (
+                <React.Fragment>
+                  <Text style={{ color: "#FFDF00", fontSize: 13, marginVertical: 7 }}>
+                    Harvesting Date:
+                  </Text>
+                  <Text style={{ color: "white", fontSize: 12, marginVertical: 7, marginBottom:10 }}>
+                    Harvesting starting on {nextStage && nextStage.startDate}
+                  </Text>
+                </React.Fragment>
+              )}
+            </View>
+          )}
+        </ScrollView>
+      </View>
 
-          <Pressable
-            style={{
-              width: 300,
-              height: 250,
-              marginTop: 10,
-              backgroundColor: "#2f8000",
-              borderRadius: 10,
-              padding: 20,
-              marginHorizontal: 20
-            }}
-          >
-                       <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
-                        Irrigation Switch
-            </Text>
-             <View style={{ position: "absolute",  right: 10 }}>
+      <Pressable
+        style={{
+          width: 300,
+          height: 250,
+          marginTop: 10,
+          backgroundColor: "#2f8000",
+          borderRadius: 10,
+          padding: 20,
+          marginHorizontal: 20
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
+            Irrigation Switch
+          </Text>
+          <View style={{ position: "absolute",  right: 10 }}>
             <Switch
               value={!isValveOn}
               onValueChange={handleToggleSwitch}
               ios_backgroundColor="#3e3e3e"
               thumbColor={isValveOn ? "#f4f3f4" : "2f8000"}
               trackColor={{ false: "#767577", true: "#81b0ff" }}
-              
             />
           </View>
-          </View>
+        </View>
+        <Text
+          style={{
+            color: "white",
+            fontSize: 15,
+            fontWeight: "bold",
+            marginVertical: 7
+          }}
+        >
+          Water usage
+        </Text>
+        {fieldData && (
+          <View>
             <Text
-              style={{
-                color: "white",
-                fontSize: 15,
-                fontWeight: "bold",
-                marginVertical: 7
-              }}
+              style={{ color: "white", fontSize: 15, fontWeight: "500" }}
             >
-              Water usage
+              Valve Position:{valvePosition}
             </Text>
-            {fieldData && (
-              <View>
-                <Text
-                  style={{ color: "white", fontSize: 15, fontWeight: "500" }}
-                >
-                  Valve Position:{valvePosition}
-                </Text>
-                <Text
-                  style={{ color: "white", fontSize: 15, fontWeight: "500" }}
-                >
-                  Total Water Used: {fieldData.field2} L
-                </Text>
-                <Text
-                  style={{ color: "white", fontSize: 15, fontWeight: "500" }}
-                >
-                  Flow Rate: {fieldData.field3} L/min
-                </Text>
-              </View>
-            )}
- 
-          </Pressable>
+            <Text
+              style={{ color: "white", fontSize: 15, fontWeight: "500" }}
+            >
+              Total Water Used: {fieldData.field2} L
+            </Text>
+            <Text
+              style={{ color: "white", fontSize: 15, fontWeight: "500" }}
+            >
+              Flow Rate: {fieldData.field3} L/min
+            </Text>
+          </View>
+        )}
 
-          <Pressable
+      </Pressable>
+
+      <Pressable
+        style={{
+          width: 300,
+          height: 250,
+          marginTop: 10,
+          backgroundColor: "#2f8000",
+          borderRadius: 10,
+          padding: 20,
+          marginHorizontal: 20
+        }}
+      >
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
+            Start the bot
+          </Text>
+          <View style={{ position: "absolute", right: 10 }}>
+            <Switch
+              value={!isSwitchOn}
+              onValueChange={handleToggleSwitchKill}
+              ios_backgroundColor="#3e3e3e"
+              thumbColor={isSwitchOn ? "#f4f3f4" : "2f8000"}
+              trackColor={{ false: "#767577", true: "#81b0ff" }}
+            />
+          </View>
+        </View>
+        <Text
+          style={{
+            color: "white",
+            fontSize: 15,
+            fontWeight: "bold",
+            marginVertical: 5
+          }}
+        >
+        </Text>
+          <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
+            Bot is capturing image {speedOfImage} images/second{'\n'}
+            To get the location of Bot click the map icon at the top right
+          </Text> 
+      </Pressable>
+
+      {/* New Card */}
+      <Pressable
   style={{
     width: 300,
     height: 250,
@@ -693,18 +756,12 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
 >
   <View style={{ flexDirection: "row", alignItems: "center" }}>
     <Text style={{ color: "orange", fontSize: 15, fontWeight: "500", marginRight: 10 }}>
-      Start the bot
+      Edge Health
     </Text>
-    <View style={{ position: "absolute", right: 10 }}>
-      <Switch
-        value={!isSwitchOn}
-        onValueChange={handleToggleSwitchKill}
-        ios_backgroundColor="#3e3e3e"
-        thumbColor={isSwitchOn ? "#f4f3f4" : "2f8000"}
-        trackColor={{ false: "#767577", true: "#81b0ff" }}
-      />
-    </View>
+    {/* Add your custom switch or any other component */}
   </View>
+  {/* Add your custom content */}
+
   <Text
     style={{
       color: "white",
@@ -713,16 +770,39 @@ console.log(nextStage && nextStage.name +"starting on"+nextStage.startDate);
       marginVertical: 5
     }}
   >
+    CPU Usage: {healthData && healthData.field1} %
+    
   </Text>
-    <Text style={{ color: "white", fontSize: 15, fontWeight: "500" }}>
-      Bot is capturing image {speedOfImage} images/second{'\n'}
-      To get the location of Bot click the map icon at the top right
-    </Text> 
+
+  <Text
+    style={{
+      color: "white",
+      fontSize: 15,
+      fontWeight: "bold",
+      marginVertical: 5
+    }}
+  >
+    Total Space: {healthData && healthData.field2} GB
+  </Text>
+  <Text
+    style={{
+      color: "white",
+      fontSize: 15,
+      fontWeight: "bold",
+      marginVertical: 5
+    }}
+  >
+    Free Space: {healthData && healthData.field3} GB
+  </Text>
+  {/* Add more custom content as needed */}
 </Pressable>
-        </ScrollView>
-      </ScrollView>
-    </View>
+      {/* End of New Card */}
+  
+
+    </ScrollView>
+  </ScrollView>
+</View>
   );
-};
+        };
 
 export default HomeScreen;

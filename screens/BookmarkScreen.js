@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigation } from "@react-navigation/native";
 import { useLayoutEffect } from "react";
+import { Camera } from 'expo-camera';
 import {
   View,
   Image,
@@ -9,6 +10,8 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  TextInput,
+  Button,
 } from 'react-native';
 import {
   getStorage,
@@ -16,6 +19,7 @@ import {
   getDownloadURL,
   listAll
 } from 'firebase/storage';
+import * as Permissions from 'expo-permissions';
 import {
   getFirestore,
   doc,
@@ -38,7 +42,6 @@ const BookmarkScreen = () => {
 
     // Fetch data again
     fetchPhotoData();
-
     setRefreshing(false);
   }, []);
 
@@ -212,5 +215,132 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+
+// import React, { useState, useRef, useEffect } from 'react';
+// import { View, Button, StyleSheet, Platform } from 'react-native';
+// import { Camera, CameraType } from 'expo-camera';
+// import * as MediaLibrary from 'expo-media-library'
+// import * as ImagePicker from 'expo-image-picker';
+// import * as Permissions from 'expo-permissions';
+// import { useNavigation } from '@react-navigation/native';
+// import axios from 'axios';
+
+
+//   const BookmarkScreen = () => {
+//   const navigation = useNavigation();
+//   const [hasPermission, setHasPermission] = useState(null);
+//   const [imageUrl, setImageUrl] = useState('');
+//   const [imageFile, setImageFile] = useState(null);
+//   const [type, setType] = useState(Camera.Constants.Type.back);
+//   const [flash, setFlash] = useState(Camera.Constants.FlashMode.off);
+//   const cameraRef = useRef(null);
+
+//   useEffect(() => {
+//     (async () => {
+//      MediaLibrary.requestPermissionsAsync();
+//      const camerastatus = await Camera.requestCameraPermissionsAsync();
+//      setHasPermission(camerastatus.status === 'granted');
+//     })();
+//   }, []);
+
+//   const takePicture = async () => {
+//     if (cameraRef.current) {
+//       try {
+//         const data = await cameraRef.current.takePictureAsync();
+//         if (data && data.uri) {
+//           setImageUrl(data.uri);
+//           console.log("Picture taken:", data.uri);
+//         } else {
+//           console.log("Failed to capture picture: Invalid data");
+//         }
+//       } catch (e) {
+//         console.log("Error capturing picture:", e);
+//       }
+//     } else {
+//       console.log("Camera reference is not available");
+//     }
+//   }
+
+//   const model = 'tih-iot';
+//   const version = '1';
+//   const apiKey = 'h6biqgKRe29vFMRpFOur'; // Replace with your Roboflow API key
+
+ 
+  
+//   const handleInference = async () => {
+//       try {
+//           // Read image file and encode to base64
+//           const image = fs.readFileSync(imageUrl, {
+//               encoding: "base64"
+//           });
+  
+//           // Send POST request to Roboflow API
+//           const response = await axios({
+//               method: "POST",
+//               url: `https://detect.roboflow.com/${model}/${version}`,
+//               params: {
+//                   api_key: apiKey
+//               },
+//               data: image,
+//               headers: {
+//                   "Content-Type": "application/x-www-form-urlencoded"
+//               }
+//           });
+  
+//           // Log response data
+//           console.log(response.data);
+//       } catch (error) {
+//           console.log(error.message);
+//       }
+//   };
+  
+//   return (
+
+//     <View style={styles.container}>
+//       <View style={styles.header}>
+//         {/* Your header content here */}
+  
+//       </View>
+//       <View style={styles.content}>
+//         {/* Your content including inputs, buttons, etc. here */}
+//         {/* <Button title="Choose Photo" onPress={takePicture} /> */}
+//         <Button title="Run Inference" onPress={handleInference} />
+//       </View>
+//       { hasPermission && (
+//         <Camera style={{ flex: 1 }} type={type} flashMode={flash} ref={cameraRef}>
+//           <Button title="Take Picture" onPress={takePicture} />
+//         </Camera>
+//       )}
+//     </View>
+//   );
+// };
+
+// const styles = StyleSheet.create({
+//   container: {
+//     flex: 1,
+//     backgroundColor: '#f7fafc',
+//   },
+//   camera: {
+//     flex: 1, 
+//     borderRadius:20,
+
+//   },
+//   header: {
+//     backgroundColor: 'white',
+//     padding: 20,
+//   },
+//   content: {
+//     padding: 20,
+//   },
+//   input: {
+//     borderWidth: 1,
+//     borderColor: '#cbd5e0',
+//     borderRadius: 4,
+//     height: 40,
+//     marginBottom: 20,
+//     paddingHorizontal: 10,
+//   },
+// });
 
 export default BookmarkScreen;
